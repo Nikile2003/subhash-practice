@@ -13,21 +13,23 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Copy files to EC2 via SSH
+    - name: Copy files to EC2 (temporary dir)
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         source: "index.html"
-        target: "/var/www/html/"
-        overwrite: true     # <-- ADD THIS
+        target: "/home/${{ secrets.EC2_USER }}/deploy"
+        overwrite: true
 
-    - name: Restart Nginx
+    - name: Move files to Nginx folder and restart
       uses: appleboy/ssh-action@v0.1.8
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          sudo rm -rf /var/www/html/*
+          sudo cp -r /home/${{ secrets.EC2_USER }}/deploy/* /var/www/html/
           sudo systemctl restart nginx
